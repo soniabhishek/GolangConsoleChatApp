@@ -36,26 +36,32 @@ func server() {
 			log.Fatal(err)
 		}
 		conn.Write([]byte("helllo new connn"))
+		go readConn(conn)
 		fmt.Println(conn.RemoteAddr())
 
 	}
 }
+func readConn(conn net.Conn) {
+	for {
+		buffer := make([]byte, 1024)
+		conn.Read(buffer)
+		fmt.Print(string(buffer))
+	}
+}
+
 func joinPeer() {
 	conn, err := net.Dial("tcp", "127.0.0.1:10000")
 	if err != nil {
 		log.Fatal(err)
 	}
 	conn.Write([]byte("joined new peer"))
+	go chat(conn)
 	for {
 		buffer := make([]byte, 1024)
 		conn.Read(buffer)
 		fmt.Println(string(buffer))
 	}
 	fmt.Println(conn.RemoteAddr())
-}
-
-func acceptConn() {
-
 }
 func chat(conn net.Conn) {
 	for {
@@ -64,7 +70,7 @@ func chat(conn net.Conn) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Print(string(o))
+		conn.Write(o)
 	}
 }
 func getLocalIp() string {
