@@ -2,12 +2,18 @@ package main
 
 import (
 	"bufio"
+	"container/list"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"time"
 )
+
+type Peer struct {
+	conn net.Conn
+	ip   string
+}
 
 func main() {
 	fmt.Println("Hello User your Ip is ", getLocalIp())
@@ -28,24 +34,34 @@ func main() {
 }
 
 func server() {
+	listPeers := list.New()
 	fmt.Println("server called")
 	ln, _ := net.Listen("tcp", ":10000")
 	for {
 		conn, err := ln.Accept()
+		p := Peer{}
+		p.conn = conn
+		p.ip = conn.RemoteAddr().String()
+		listPeers.PushBack(p)
 		if err != nil {
 			log.Fatal(err)
 		}
 		conn.Write([]byte("helllo new connn"))
-		go readConn(conn)
+		go readConn(conn, listPeers)
 		fmt.Println(conn.RemoteAddr())
 
 	}
 }
-func readConn(conn net.Conn) {
+func readConn(conn net.Conn, listPeers *list.List) {
 	for {
 		buffer := make([]byte, 1024)
 		conn.Read(buffer)
 		fmt.Print(string(buffer))
+		for iter := listPeers.Front(); iter != nil; iter = iter.Next() {
+			if iter.Value.(Peer).conn != conn {
+				iter.Value.(Peer).conn.Write(buffer)
+			}
+		}
 	}
 }
 
