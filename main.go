@@ -7,7 +7,13 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
+)
+
+var (
+	ln net.Listener
 )
 
 type Peer struct {
@@ -15,7 +21,19 @@ type Peer struct {
 	ip   string
 }
 
+func osSignal() {
+	channel := make(chan os.Signal)
+	signal.Notify(channel, syscall.SIGINT)
+	<-channel
+	fmt.Println("leaving server")
+	err := ln.Close()
+	if err != nil {
+		log.Println("ln.Close():", err)
+	}
+	os.Exit(0)
+}
 func main() {
+	go osSignal()
 	fmt.Println("Hello User your Ip is ", getLocalIp())
 	fmt.Println("Want to establish a new server or want to be a normal node")
 	decide, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -36,7 +54,7 @@ func main() {
 func server() {
 	listPeers := list.New()
 	fmt.Println("server called")
-	ln, _ := net.Listen("tcp", ":10000")
+	ln, _ = net.Listen("tcp", ":10000")
 	for {
 		conn, err := ln.Accept()
 		p := Peer{}
