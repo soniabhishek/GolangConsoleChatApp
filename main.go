@@ -36,6 +36,8 @@ func main() {
 	go osSignal()
 	fmt.Println("Hello User your Ip is ", getLocalIp())
 	fmt.Println("Want to establish a new server or want to be a normal node")
+	fmt.Println("Press y to establish a server or press n to get connected to a node")
+	fmt.Println("---------------------------------------------------------------------------------------------------------")
 	decide, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
 		log.Fatal(err)
@@ -76,8 +78,9 @@ func readConn(conn net.Conn, listPeers *list.List) {
 		conn.Read(buffer)
 		fmt.Print(string(buffer))
 		for iter := listPeers.Front(); iter != nil; iter = iter.Next() {
+			sender := []byte(iter.Value.(Peer).conn.RemoteAddr().String() + ": " + string(buffer))
 			if iter.Value.(Peer).conn != conn {
-				iter.Value.(Peer).conn.Write(buffer)
+				iter.Value.(Peer).conn.Write(sender)
 			}
 		}
 	}
